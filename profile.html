@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Habesha Dating – Profile</title>
+  <link href="https://fonts.googleapis.com/css2?family=Abyssinica+SIL&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:"Abyssinica SIL",sans-serif;background:#fdf6f0;margin:0;padding:1rem}
+    .card{max-width:480px;margin:2vh auto;background:#fff;padding:2rem;border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,.15)}
+    h2{color:#d32f2f;margin-top:0}
+    label{display:block;margin:.8rem 0 .3rem}
+    input,select,textarea{width:100%;padding:.6rem;border:1px solid #bbb;border-radius:6px}
+    button{width:100%;padding:.7rem;background:#d32f2f;color:#fff;border:none;border-radius:6px;font-size:1rem;cursor:pointer}
+    button:disabled{background:#888}
+    .toggle{text-align:right;font-size:.85rem;color:#555;cursor:pointer;text-decoration:underline}
+    .msg{margin-top:1rem;font-size:.9rem}.error{color:#c62828}.success{color:#2e7d32}
+    .hidden{display:none}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="toggle" onclick="toggleLang()">አማርኛ</div>
+    <h2 id="title">Create Your Profile</h2>
+
+    <!-- STEP 1: login -->
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <label id="lEmail">Email</label>
+      <input id="email" type="email" required/>
+      <label id="lPass">Password</label>
+      <input id="password" type="password" required/>
+      <button id="btnLogin" type="submit">Login</button>
+    </form>
+
+    <!-- STEP 2: profile (hidden until login success) -->
+    <form id="profileForm" class="hidden" onsubmit="handleProfile(event)">
+      <label id="lName">First Name</label>
+      <input name="firstName" required/>
+      <label id="lAge">Age</label>
+      <input name="age" type="number" min="18" required/>
+      <label id="lGender">Gender</label>
+      <select name="gender" required>
+        <option value="">Select</option>
+        <option value="female">Female</option>
+        <option value="male">Male</option>
+      </select>
+      <label id="lLang">Languages spoken (comma separated)</label>
+      <input name="languages" placeholder="Amharic, English, Tigrinya" required/>
+      <label id="lCulture">Cultural background</label>
+      <textarea name="culture" rows="3" placeholder="e.g. Ethiopian Orthodox, coffee ceremonies..." required></textarea>
+      <label id="lInterests">Interests</label>
+      <textarea name="interests" rows="3" placeholder="Music, travel, tech..." required></textarea>
+      <button id="btnProfile" type="submit">Save Profile</button>
+    </form>
+
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <script>
+    const API = 'https://habesha-api-xxu6.onrender.com';
+    let token = '';
+    const am = {
+      title:'ፕሮፋይል ይፍጠሩ', lEmail:'ኢሜይል', lPass:'የይለፍ ቃል', btnLogin:'ግቡ',
+      lName:'ስም', lAge:'እድሜ', lGender:'ጾታ', lLang:'አነጋገሩ ልሳናት', lCulture:'ባህላይ መረጃ', lInterests:'ስነልቦና', btnProfile:'ፕሮፋይል ሴቭ',
+      toggle:'English', success:'ተሳክቷል!', error:'ስህተት ተከስቷል።'
+    };
+    const en = {
+      title:'Create Your Profile', lEmail:'Email', lPass:'Password', btnLogin:'Login',
+      lName:'First Name', lAge:'Age', lGender:'Gender', lLang:'Languages spoken', lCulture:'Cultural background',
+      lInterests:'Interests', btnProfile:'Save Profile', toggle:'አማርኛ', success:'Success!', error:'An error occurred.'
+    };
+    let lang = en;
+    function toggleLang(){
+      lang = lang===en? am: en;
+      document.getElementById('title').textContent = lang.title;
+      ['lEmail','lPass','btnLogin','lName','lAge','lGender','lLang','lCulture','lInterests','btnProfile'].forEach(id=>
+        document.getElementById(id).textContent = lang[id]);
+      document.querySelector('.toggle').textContent = lang.toggle;
+    }
+    async function handleLogin(e){
+      e.preventDefault();
+      document.getElementById('btnLogin').disabled = true;
+      const res = await fetch(`${API}/api/auth/login`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
+        })
+      });
+      const data = await res.json();
+      const box = document.getElementById('msg');
+      if(res.ok){
+        token = data.token;
+        box.className = 'msg success'; box.textContent = lang.success;
+        document.getElementById('loginForm').classList.add('hidden');
+        document.getElementById('profileForm').classList.remove('hidden');
+      }else{
+        box.className = 'msg error'; box.textContent = data.msg || lang.error;
+      }
+      document.getElementById('btnLogin').disabled = false;
+    }
+    async function handleProfile(e){
+      e.preventDefault();
+      document.getElementById('btnProfile').disabled = true;
+      const body = JSON.stringify(Object.fromEntries(new FormData(e.target)));
+      const res = await fetch(`${API}/api/profile`,{
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body
+      });
+      const data = await res.json();
+      const box = document.getElementById('msg');
+      box.className = res.ok ? 'msg success' : 'msg error';
+      box.textContent = res.ok ? lang.success : (data.msg || lang.error);
+      document.getElementById('btnProfile').disabled = false;
+    }
+  </script>
+</body>
+</html>
