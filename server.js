@@ -20,6 +20,15 @@ const User = mongoose.model('User', new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 }));
 
+// ---------- friendly root page ----------
+app.get('/', (_, res) =>
+  res.send(`
+    <h1>Habesha Dating API 👋</h1>
+    <p>POST to <code>/api/auth/register</code> with JSON <code>{email, password}</code></p>
+  `)
+);
+
+// ---------- registration ----------
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -33,6 +42,5 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-app.get('/', (_, res) => res.send('Habesha Dating API ok'));
 const port = process.env.PORT || 4000;
 app.listen(port, () => console.log(`API on ${port}`));
