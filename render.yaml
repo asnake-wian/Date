@@ -1,0 +1,10 @@
+# render.yaml
+services:
+  - type: web
+    name: habesha-api
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: MONGO_URI
+        sync: false  # you paste your Atlas/RenderMongo URI on first deploy
