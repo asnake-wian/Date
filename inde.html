@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Habesha Dating - Join</title>
+  <link href="https://fonts.googleapis.com/css2?family=Abyssinica+SIL&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: "Abyssinica SIL", sans-serif; background: #fdf6f0; margin: 0; }
+    .card { max-width: 420px; margin: 10vh auto; background: #fff; padding: 2rem; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,.15); }
+    h2 { color: #d32f2f; margin-top: 0; }
+    label { display: block; margin: .8rem 0 .3rem; }
+    input { width: 100%; padding: .6rem; border: 1px solid #bbb; border-radius: 6px; }
+    button { margin-top: 1.2rem; width: 100%; padding: .7rem; background: #d32f2f; color: #fff; border: none; border-radius: 6px; font-size: 1rem; cursor: pointer; }
+    button:disabled { background: #888; }
+    .toggle { text-align: right; font-size: .85rem; color: #555; cursor: pointer; text-decoration: underline; }
+    .msg { margin-top: 1rem; font-size: .9rem; }
+    .error { color: #c62828; }
+    .success { color: #2e7d32; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="toggle" onclick="toggleLang()">አማርኛ</div>
+    <h2 id="title">Join Habesha Dating</h2>
+    <form id="form" onsubmit="handleSubmit(event)">
+      <label id="l1">Email</label>
+      <input id="email" type="email" required />
+      <label id="l2">Password</label>
+      <input id="password" type="password" minlength="6" required />
+      <button id="btn" type="submit">Create Account</button>
+    </form>
+    <div id="msg" class="msg"></div>
+  </div>
+
+  <script>
+    const am = {
+      title: "የሐበሻ ዲቲንግ ይቀላቀሉ",
+      l1: "ኢሜይል", l2: "የይለፍ ቃል", btn: "አካውንት ፍጠር",
+      toggle: "English", success: "ተሳክቷል! እባኮትን ይግቡ.",
+      error: "ስህተት ተከስቷል። እንደገና ይሞክሩ።"
+    };
+    const en = {
+      title: "Join Habesha Dating",
+      l1: "Email", l2: "Password", btn: "Create Account",
+      toggle: "አማርኛ", success: "Success! Please log in.",
+      error: "Error occurred. Try again."
+    };
+    let lang = en;
+    function toggleLang() {
+      lang = lang === en ? am : en;
+      document.getElementById('title').textContent = lang.title;
+      document.getElementById('l1').textContent = lang.l1;
+      document.getElementById('l2').textContent = lang.l2;
+      document.getElementById('btn').textContent = lang.btn;
+      document.querySelector('.toggle').textContent = lang.toggle;
+    }
+    async function handleSubmit(e) {
+      e.preventDefault();
+      const body = JSON.stringify({
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      });
+      document.getElementById('btn').disabled = true;
+      const res = await fetch(window.location.origin.replace('3000','4000') + '/api/auth/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body
+      });
+      const json = await res.json();
+      const box = document.getElementById('msg');
+      box.textContent = res.ok ? lang.success : (json.msg || lang.error);
+      box.className = res.ok ? 'msg success' : 'msg error';
+      document.getElementById('btn').disabled = false;
+    }
+  </script>
+</body>
+</html>
