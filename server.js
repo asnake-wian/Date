@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcrypt';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 import { config } from 'dotenv';
 
 config();
@@ -20,11 +21,12 @@ const User = mongoose.model('User', new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 }));
 
-// ---------- friendly root page ----------
+// ---------- friendly root ----------
 app.get('/', (_, res) =>
   res.send(`
     <h1>Habesha Dating API 👋</h1>
     <p>POST to <code>/api/auth/register</code> with JSON <code>{email, password}</code></p>
+    <p>POST to <code>/api/auth/login</code> with JSON <code>{email, password}</code></p>
   `)
 );
 
@@ -38,6 +40,25 @@ app.post('/api/auth/register', async (req, res) => {
     res.json({ id: user._id, email: user.email });
   } catch (e) {
     if (e.code === 11000) return res.status(409).json({ msg: 'Email already exists' });
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// ---------- JWT login ----------
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ msg: 'Email & password required' });
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(401).json({ msg: 'Invalid credentials' });
+
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) return res.status(401).json({ msg: 'Invalid credentials' });
+
+    const token = jwt.sign({ uid: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, email: user.email });
+  } catch (e) {
     res.status(500).json({ msg: 'Server error' });
   }
 });
