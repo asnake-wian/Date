@@ -21,12 +21,25 @@ const User = mongoose.model('User', new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 }));
 
+// ---------- Profile model ----------
+const Profile = mongoose.model('Profile', new mongoose.Schema({
+  owner:      { type: mongoose.Schema.Types.ObjectId, ref: 'User', unique: true },
+  firstName:  String,
+  age:        Number,
+  gender:     String,
+  languages:  String,
+  culture:    String,
+  interests:  String,
+  createdAt:  { type: Date, default: Date.now }
+}));
+
 // ---------- friendly root ----------
 app.get('/', (_, res) =>
   res.send(`
     <h1>Habesha Dating API 👋</h1>
-    <p>POST to <code>/api/auth/register</code> with JSON <code>{email, password}</code></p>
-    <p>POST to <code>/api/auth/login</code> with JSON <code>{email, password}</code></p>
+    <p>POST <code>/api/auth/register</code> &nbsp; <code>{email, password}</code></p>
+    <p>POST <code>/api/auth/login</code> &nbsp; <code>{email, password}</code></p>
+    <p>POST <code>/api/profile</code> &nbsp; (JWT required)</p>
   `)
 );
 
@@ -58,6 +71,34 @@ app.post('/api/auth/login', async (req, res) => {
 
     const token = jwt.sign({ uid: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, email: user.email });
+  } catch (e) {
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// ---------- JWT middleware ----------
+function auth(req, res, next){
+  const hdr = req.headers.authorization;
+  if (!hdr) return res.status(401).json({ msg: 'Token required' });
+  try {
+    const token = hdr.split(' ')[1];
+    const { uid } = jwt.verify(token, process.env.JWT_SECRET);
+    req.uid = uid;
+    next();
+  } catch {
+    res.status(401).json({ msg: 'Invalid token' });
+  }
+}
+
+// ---------- create / update profile ----------
+app.post('/api/profile', auth, async (req, res) => {
+  try {
+    const profile = await Profile.findOneAndUpdate(
+      { owner: req.uid },
+      { ...req.body, owner: req.uid },
+      { new: true, upsert: true, runValidators: true }
+    );
+    res.json(profile);
   } catch (e) {
     res.status(500).json({ msg: 'Server error' });
   }
