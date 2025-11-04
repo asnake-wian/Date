@@ -10,7 +10,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Mongo stub (Render provides MONGO_URI)
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/habesha')
   .then(() => console.log('Mongo connected'))
   .catch(err => console.error(err));
@@ -21,7 +20,6 @@ const User = mongoose.model('User', new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 }));
 
-// ---------- tiny register route ----------
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password } = req.body;
